@@ -17,7 +17,7 @@ def write_merged_pdf(pdf1, pdf2, output_pdf, **kargs):
   for index in range(num_pages1):
     page1 = index
     if reverse1:
-      page1 = num_pages1 - index
+      page1 = num_pages1 - index - 1
     print(page1)
     merger.append(fileobj=pdf1, pages=(page1, page1 + 1))
 
@@ -25,7 +25,7 @@ def write_merged_pdf(pdf1, pdf2, output_pdf, **kargs):
     if index <= num_pages2:
       page2 = index
       if reverse2:
-        page2 = num_pages2 - index
+        page2 = num_pages2 - index - 1
       merger.append(fileobj=pdf2, pages=(page2, page2 + 1))
 
   merger.write(output_pdf)
