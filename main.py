@@ -34,10 +34,10 @@ def write_merged_pdf(pdf1, pdf2, output_pdf, **kargs):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('--out', help='output file path', required=True)
-  parser.add_argument('--in1', help='first input file path', required=True)
-  parser.add_argument('--in2', help='second input file path', required=True)
-  parser.add_argument('--reverse1', help='first input file path', action='store_true')
-  parser.add_argument('--reverse2', help='second input file path', action='store_true')
+  parser.add_argument('--in1', help='first input pdf path', required=True)
+  parser.add_argument('--in2', help='second input pdf path', required=True)
+  parser.add_argument('--reverse1', help='reverse first pdf page order', action='store_true')
+  parser.add_argument('--reverse2', help='reverse second pdf page order', action='store_true')
   
   args = parser.parse_args()
 
