@@ -4,7 +4,8 @@ Because many scanners can only single-side, you have to merge two PDFs. However,
 
 ## Installation
 ```
-https://github.com/harajune/book-pdf-merger.git
+git clone https://github.com/harajune/book-pdf-merger.git
+cd book-pdf-merger
 pip install -r requirements.txt
 ```
 
