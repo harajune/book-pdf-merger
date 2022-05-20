@@ -1,37 +1,70 @@
 import argparse
 from PyPDF2 import PdfFileMerger, PdfFileReader
 
-def write_merged_pdf(pdf1, pdf2, output_pdf, **kargs):
-  merger = PdfFileMerger()
-  num_pages1 = PdfFileReader(pdf1).getNumPages()
-  num_pages2 = PdfFileReader(pdf2).getNumPages()
+class PdfParameter:
+  def __init__(self, filename, reverse=False):
+    self._filename = filename
+    self._reverse = reverse
 
-  reverse1 = kargs['reverse1'] or False
-  reverse2 = kargs['reverse2'] or False
+  @property
+  def filename(self):
+    return self._filename
 
-  # check file page difference
-  num_difference = num_pages1 - num_pages2
-  if num_difference < 0 or num_difference > 1:
-    raise Exception('Invalid page numbers: in1:%d in2:%d' % (num_pages1, num_pages2))
+  @property
+  def reverse(self):
+    return self._reverse
+
+class Pdf:
+  def __init__(self, pdfParameter):
+    self._pdfParameter = pdfParameter
+    self._currentPage = 0
   
-  for index in range(num_pages1):
-    page1 = index
-    if reverse1:
-      page1 = num_pages1 - index - 1
-    print(page1)
-    merger.append(fileobj=pdf1, pages=(page1, page1 + 1))
+  @property
+  def fileObject(self):
+    return self._fileObject
 
-    # check if the merged document page is odd
-    if index <= num_pages2:
-      page2 = index
-      if reverse2:
-        page2 = num_pages2 - index - 1
-      merger.append(fileobj=pdf2, pages=(page2, page2 + 1))
+  @property
+  def currentPage(self):
+    return self._currentPage
 
-  merger.write(output_pdf)
-  
+  @property
+  def numOfPages(self):
+    return self._numOfPages
 
-if __name__ == '__main__':
+  def load(self):
+    self._fileObject = open(self._pdfParameter.filename, "rb")
+    self._numOfPages = PdfFileReader(self._fileObject).getNumPages()
+
+    # client have to call next() first.
+    # the page number begins with 0
+    if self._pdfParameter.reverse:
+      self._currentPage = self._numOfPages
+    else:
+      self._currentPage = -1
+
+  def next(self):
+    if self._pdfParameter.reverse:
+      self._currentPage = self._currentPage - 1
+    else:
+      self._currentPage = self._currentPage + 1
+
+    if self._currentPage < 0 or self._currentPage >= self._numOfPages:
+      return False
+
+    return True
+
+class PdfMerger:
+  def __init__(self, outputFileName):
+    self._merger = PdfFileMerger()
+    self._outputFileName = outputFileName
+
+  def append(self, pdf):
+    self._merger.append(fileobj=pdf.fileObject, pages=(pdf.currentPage, pdf.currentPage + 1))
+
+  def write(self):
+    self._merger.write(self._outputFileName)
+
+def parseArguments():
   parser = argparse.ArgumentParser()
   parser.add_argument('--out', help='output file path', required=True)
   parser.add_argument('--in1', help='first input pdf path', required=True)
@@ -39,12 +72,42 @@ if __name__ == '__main__':
   parser.add_argument('--reverse1', help='reverse first pdf page order', action='store_true')
   parser.add_argument('--reverse2', help='reverse second pdf page order', action='store_true')
   
-  args = parser.parse_args()
+  return parser.parse_args()
 
-  pdf1 = open(args.in1, 'rb')
-  pdf2 = open(args.in2, 'rb')
-  output_pdf = open(args.out, 'wb')
+def writeMergedPdf(pdfParameter1, pdfParameter2, outputFileName):
+  merger = PdfMerger(outputFileName)
+  pdf1 = Pdf(pdfParameter1)
+  pdf1.load()
+  
+  pdf2 = Pdf(pdfParameter2)
+  pdf2.load()
 
-  write_merged_pdf(pdf1, pdf2, output_pdf, reverse1=args.reverse1, reverse2=args.reverse2)
+  validatePdf(pdf1, pdf2)
+
+  # usually, pdf1 is greater than pdf2
+  while pdf1.next():
+    merger.append(pdf1)
+
+    if pdf2.next():
+      merger.append(pdf2)
+
+  merger.write()
+  
+def validatePdf(pdf1, pdf2):
+  # check file page difference
+  num_difference = pdf1.numOfPages - pdf2.numOfPages
+  if num_difference < 0 or num_difference > 1:
+    raise Exception('Invalid page numbers: in1:%d in2:%d' % 
+      (pdf1.numOfPages, pdf2.numOfPages))
+
+if __name__ == '__main__':
+  args = parseArguments()
+
+  pdf1 = PdfParameter(args.in1, args.reverse1)
+  pdf2 = PdfParameter(args.in2, args.reverse2)
+
+  outputFileName = args.out
+
+  writeMergedPdf(pdf1, pdf2, outputFileName)
 
 
